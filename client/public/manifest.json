@@ -1,0 +1,14 @@
+{
+  "name": "DHRUVA — Polar Mission Control",
+  "short_name": "DHRUVA",
+  "description": "AI-powered logistics, safety and command assistant for polar research missions.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#060f1c",
+  "theme_color": "#0a1a2f",
+  "lang": "en",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,23 @@
+# --- dependencies / build ---
+node_modules/
+client/dist/
+server/.venv/
+.venv/
+
+# --- secrets & local state ---
+server/.env
+server/data/
+*.env
+
+# --- python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# --- editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+
+# --- logs ---
+*.log

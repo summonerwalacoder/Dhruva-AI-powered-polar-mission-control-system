@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0e2a47"/>
+      <stop offset="1" stop-color="#061120"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#g)"/>
+  <circle cx="256" cy="256" r="150" fill="#ffffff" opacity="0.06"/>
+  <polygon points="256,90 233,222 333,180 222,260 350,330 240,300 300,400 200,290 140,360 218,238 128,270 250,200 176,140" fill="#2fa3b8"/>
+  <polygon points="256,150 340,280 300,330 260,280 220,340 190,290 246,240 210,200" fill="#8fd8e6" opacity="0.85"/>
+  <text x="256" y="470" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="42" font-weight="700" fill="#e2f4f9" letter-spacing="6">DHRUVA</text>
+</svg>
