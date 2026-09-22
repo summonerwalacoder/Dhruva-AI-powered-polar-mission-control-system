@@ -17,8 +17,6 @@ COPY server/ server/
 COPY --from=client /app/client/dist client/dist
 WORKDIR /app/server
 
-ENV DATABASE_URL=sqlite:////data/dhruva.db
-ENV CORS_ORIGINS=
 ENV SEED_DEMO=true
 
 EXPOSE 8000
