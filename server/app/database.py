@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -6,6 +8,13 @@ from .config import settings
 connect_args = {}
 if settings.database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
+    # Ensure the SQLite directory exists regardless of DATABASE_URL value
+    # (e.g. an absolute path like sqlite:////data/dhruva.db on Render).
+    prefix = "sqlite:///"
+    db_path = settings.database_url[len(prefix):] if settings.database_url.startswith(prefix) else settings.database_url
+    parent = os.path.dirname(db_path)
+    if parent and parent != "/":
+        os.makedirs(parent, exist_ok=True)
 
 engine = create_engine(settings.database_url, connect_args=connect_args, pool_pre_ping=True)
 
