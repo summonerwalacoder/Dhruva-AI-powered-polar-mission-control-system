@@ -9,7 +9,7 @@ rule-engine path answers deterministically from the same evidence so DHRUVA
 always works, even with no external API configured.
 """
 import re
-from datetime import date
+from datetime import date, timedelta
 
 from ..i18n import detect_language
 from .llm import complete, provider_name, llm_available
@@ -70,7 +70,65 @@ def detect_intent(question: str) -> str:
     return "general"
 
 
-def answer_question(db, user, question: str, mission_id=None, channel="text"):
+def parse_supply_math(question: str):
+    """Detect 'X kg <supply> for N people - how long?' questions and return
+    the numbers so the assistant can compute a direct answer, e.g.
+    '20 logo ke liye 25 kilo food kab tak chalegi'."""
+    kg = re.search(r"(\d+(?:\.\d+)?)\s*(?:kg|kilos?|किलो)\b(?!.*\bkg\b)", question, re.I)
+    people = re.search(r"(\d{1,3})\s*(?:logo|log|people|persons?|members?|लोग|आदमी|सदस्य)", question, re.I)
+    duration = re.search(r"(kab tak|kitne din|how long|कब तक|कितने दिन|chalegi|chalega|last)", question, re.I)
+    if not kg or not people or not duration:
+        return None
+    return {"amount": float(kg.group(1)), "people": max(1, int(people.group(1)))}
+
+
+def _per_person_rate(db, mission, category="food"):
+    """Implied per-person daily consumption from live inventory + clock,
+    falling back to a standard polar field ration rate."""
+    from ..models import InventoryItem
+
+    team = mission.team_size or 0
+    items = db.query(InventoryItem).filter(
+        InventoryItem.mission_id == mission.id, InventoryItem.category == category
+    ).all()
+    clock = {c["category"]: c for c in survival_clock(db, mission.id)}
+    row = clock.get(category)
+    if team and row and row.get("days_remaining"):
+        qty = sum(i.quantity or 0 for i in items)
+        if qty > 0:
+            rate = qty / float(row["days_remaining"]) / float(team)
+            if rate > 0:
+                return rate, "your current mission consumption rate"
+    default = {"food": 0.65, "water": 5.0}[category]
+    return default, "standard field ration (food 0.65 kg / water 5 L per person per day)"
+
+
+def _answer_supply_duration(db, user, mission, sm, lang, channel):
+    evidence = Evidence()
+    amount = sm["amount"]
+    people = sm["people"]
+    rate, rate_source = _per_person_rate(db, mission, "food")
+    need = rate * people
+    days = amount / need if need > 0 else 0.0
+    days_r = max(1, round(days))
+    eta = (date.today() + timedelta(days=days_r)).isoformat()
+
+    if lang == "hi":
+        head = f"{amount} किलो भोजन {people} लोगों के लिए लगभग {days_r} दिन ({eta} तक) चलेगा।"
+        detail = f"गणना: {amount} ÷ ({people} × {rate:.2f} किलो/व्यक्ति/दिन) ≈ {days:.1f} दिन। ({rate_source} माना गया।)"
+        warn = " ⚠ यह < 10 दिन है — तुरंत राशन योजना / रीसप्लाई करें।" if days_r < 10 else ""
+    else:
+        head = f"{amount} kg of food will last about {days_r} day{'s' if days_r != 1 else ''} (until {eta}) for {people} people."
+        detail = f"Math: {amount} ÷ ({people} × {rate:.2f} kg/person/day) ≈ {days:.1f} days ({rate_source})."
+        warn = " ⚠ That is under 10 days - plan an immediate ration plan / resupply." if days_r < 10 else ""
+
+    evidence.add(f"{head}{warn}")
+    evidence.add(detail)
+    reply = _reply_for(evidence, "supply_duration", lang, "ok")
+    return _build_result(reply, lang, "supply_duration", evidence, "open_inventory" if days_r < 10 else "")
+
+
+def answer_question(db, user, question, mission_id=None, channel="text"):
     lang = detect_language(question)
     intent = detect_intent(question)
     evidence = Evidence()
@@ -81,6 +139,10 @@ def answer_question(db, user, question: str, mission_id=None, channel="text"):
         evidence.add("No mission selected or no mission accessible for your role.")
         reply = _reply_for(evidence, intent, lang, "no_mission")
         return _build_result(reply, lang, intent, evidence, "select mission first, then try again.")
+
+    sm = parse_supply_math(question)
+    if sm:
+        return _answer_supply_duration(db, user, mission, sm, lang, channel)
 
     if intent == "simulate":
         return _handle_simulate(db, user, mission, question, lang, evidence, channel)
@@ -376,6 +438,7 @@ def _reply_for(evidence: Evidence, intent: str, lang: str, mode: str, extra=""):
 def _head_for(intent):
     heads = {
         "mission_status": "Here is the current mission status:",
+        "supply_duration": "Answer:",
         "fuel": "Here is the fuel situation:",
         "food": "Here is the food situation:",
         "water": "Here is the water situation:",
@@ -400,6 +463,7 @@ def _reply_hi(evidence: Evidence, intent: str, mode: str, extra=""):
         return "सिमुलेशन पूरा हुआ। " + " ".join(facts[:4])
     heads = {
         "mission_status": "मिशन की वर्तमान स्थिति:",
+        "supply_duration": "उत्तर:",
         "fuel": "ईंधन की स्थिति:",
         "food": "भोजन की स्थिति:",
         "water": "पानी की स्थिति:",

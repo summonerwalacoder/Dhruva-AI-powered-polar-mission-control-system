@@ -4,6 +4,8 @@ The architecture is dictionary-driven so additional languages can be added by
 extending `LANGUAGES` and `TRANSLATIONS`.
 """
 
+import re
+
 # Devanagari range check for Hindi detection
 DEVANAGARI = range(0x0900, 0x0980)
 
@@ -131,13 +133,17 @@ def detect_language(text: str) -> str:
         if ord(ch) in DEVANAGARI:
             return "hi"
     t = text.lower()
-    # Common Hindi words/phrases (Roman script)
+    # Whole-word Hindi/Hinglish tokens (word-boundary matched so English words
+    # like "how"/"ho" inside "how", or plain US-english "food", don't trigger).
+    t_clean = re.sub(r"[^A-Za-z0-9\s]", " ", t)
     hindi_words = [
-        "kitna", "kab", "kya", "hai", "kitne", "din", "ka", "food", "fuel",
-        "bacha", "raha", "nahi", "band", "ho", "gaya", "kharab", "humare",
-        "paas", "resupply", "mausam", "risk", "kya hua", "kaise",
+        "kitna", "kab", "kya", "hai", "kitne", "din", "ka", "ke",
+        "bacha", "raha", "nahi", "band", "gaya", "kharab", "humare",
+        "paas", "resupply", "mausam", "risks", "kya hua", "kaise",
+        "logo", "log", "chalegi", "chalega", "kitni", "karne", "liye",
+        "theek", "rahega", "rahegi", "tak", "karega", "chahiye", "kal",
     ]
-    hits = sum(1 for w in hindi_words if w in t)
+    hits = sum(1 for w in hindi_words if re.search(rf"\b{re.escape(w)}\b", t_clean))
     if hits >= 2:
         return "hi"
     return "en"

@@ -8,25 +8,77 @@ interface Bundle {
   missions: any[]
   personnel: any[]
   tasks: any[]
+  inventory: any[]
   missionName: string
   mid: number | null
 }
 
 async function loadBundle(mid: number | null): Promise<Bundle> {
-  const [overview, clock, predictions, missions, personnel, tasks] = await Promise.all([
+  const [overview, clock, predictions, missions, personnel, tasks, inventory] = await Promise.all([
     mid ? getCachedValue<any>(`/api/missions/${mid}/overview`) : Promise.resolve(null),
     mid ? getCachedValue<SurvivalClock[]>(`/api/inventory/survival-clock/all?mission_id=${mid}`) : Promise.resolve(null),
     mid ? getCachedValue<Prediction[]>(`/api/inventory/predictions/all?mission_id=${mid}`) : Promise.resolve(null),
     getCachedValue<any[]>(`/api/missions`),
     getCachedValue<any[]>(`/api/personnel`),
     getCachedValue<any[]>(`/api/tasks`),
+    mid ? getCachedValue<any[]>(`/api/inventory?mission_id=${mid}`) : Promise.resolve(null),
   ])
   const missionName = (missions || []).find((m) => m.id === mid)?.name || `Mission ${mid || '—'}`
-  return { overview, clock: clock || [], predictions: predictions || [], missions: missions || [], personnel: personnel || [], tasks: tasks || [], missionName, mid }
+  return { overview, clock: clock || [], predictions: predictions || [], missions: missions || [], personnel: personnel || [], tasks: tasks || [], inventory: inventory || [], missionName, mid }
 }
 
 export function detectLang(q: string): 'hi' | 'en' {
   return /[\u0900-\u097F]/.test(q) ? 'hi' : 'en'
+}
+
+function parseSupplyMath(q: string): { amount: number; people: number } | null {
+  const kg = q.match(/(\d+(?:\.\d+)?)\s*(?:kg|kilos?|किलो)\b/i)
+  const ppl = q.match(/(\d{1,3})\s*(?:logo|log|people|persons?|members?|लोग|आदमी|सदस्य)/i)
+  const dur = /(kab tak|kitne din|how long|कब तक|कितने दिन|chalegi|chalega|last)/i.test(q)
+  if (!kg || !ppl || !dur) return null
+  return { amount: parseFloat(kg[1]), people: Math.max(1, parseInt(ppl[1], 10)) }
+}
+
+function offlineSupplyDuration(b: Bundle, sm: { amount: number; people: number }, lang: 'hi' | 'en', ev: string[]): ChatReply {
+  const team = (b.overview?.mission?.team_size as number) || b.personnel.length || 0
+  const rows = (b.inventory || []).filter((i: any) => String(i.category).toLowerCase().includes('food'))
+  const qty = rows.reduce((s: number, i: any) => s + (Number(i.quantity) || 0), 0)
+  const food = b.clock.find((c) => c.category?.toLowerCase().includes('food'))
+  let rate = 0.65
+  let source = 'standard field ration (0.65 kg/person/day)'
+  if (team && food?.days_remaining && qty > 0) {
+    const implied = qty / food.days_remaining / team
+    if (implied > 0) {
+      rate = implied
+      source = 'your current mission consumption rate'
+    }
+  }
+  const need = rate * sm.people
+  const days = need > 0 ? sm.amount / need : 0
+  const daysR = Math.max(1, Math.round(days))
+  const eta = new Date(Date.now() + daysR * 86400000).toISOString().slice(0, 10)
+  const warn = daysR < 10 ? (lang === 'hi' ? ' ⚠ यह < 10 दिन है — तुरंत राशन योजना / रीसप्लाई करें।' : ' ⚠ That is under 10 days - plan an immediate ration plan / resupply.') : ''
+  ev.push(`supply math: ${sm.amount} / (${sm.people} x ${rate.toFixed(2)}) = ${daysR}d (${source})`)
+  const line =
+    lang === 'hi'
+      ? `${sm.amount} किलो भोजन ${sm.people} लोगों के लिए लगभग ${daysR} दिन (${eta} तक) चलेगा।${warn}`
+      : `${sm.amount} kg of food will last about ${daysR} day${daysR === 1 ? '' : 's'} (until ${eta}) for ${sm.people} people.${warn}`
+  const detail =
+    lang === 'hi'
+      ? `गणना: ${sm.amount} ÷ (${sm.people} × ${rate.toFixed(2)} किलो/व्यक्ति/दिन) ≈ ${days.toFixed(1)} दिन (${source})।`
+      : `Math: ${sm.amount} ÷ (${sm.people} × ${rate.toFixed(2)} kg/person/day) ≈ ${days.toFixed(1)} days (${source}).`
+  return {
+    reply:
+      lang === 'hi'
+        ? `(ऑफ़लाइन उत्तर — cached data)\n\nउत्तर: ${line} ${detail}`
+        : `${line} ${detail}`,
+    language: lang,
+    intent: 'supply',
+    provider: 'offline-local',
+    model: 'dhruva-offline-engine',
+    evidence: ev,
+    action: daysR < 10 ? { type: 'open_inventory' } : null,
+  }
 }
 
 function clockLine(c: SurvivalClock): string {
@@ -48,6 +100,11 @@ export async function offlineAnswer(q: string, missionId: number | null): Promis
 
   const pick = (cat: string): SurvivalClock | undefined => clock.find((c) => c.category?.toLowerCase().includes(cat))
   const pickPred = (cat: string): Prediction | undefined => b.predictions.find((p) => p.category?.toLowerCase().includes(cat))
+
+  const sm = parseSupplyMath(q)
+  if (sm) {
+    return offlineSupplyDuration(b, sm, lang, ev)
+  }
 
   let reply = ''
   let intent = 'general'

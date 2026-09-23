@@ -5,7 +5,9 @@ import { Badge, Btn, Card, ErrorBox, Icon, Spinner, cx, statusTone, useApi } fro
 
 export default function Reports() {
   const { selectedId, selected } = useMission()
-  const { data, loading, error, reload } = useApi<any>(`/api/reports/daily?mission_id=${selectedId}`)
+  const { data, loading, error, reload } = useApi<any>(
+    selectedId ? `/api/reports/daily?mission_id=${selectedId}` : null
+  )
   const [dl, setDl] = useState<'csv' | 'pdf' | null>(null)
 
   const download = async (kind: 'csv' | 'pdf') => {

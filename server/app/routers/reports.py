@@ -1,7 +1,7 @@
 import csv
 import io
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from ..audit import audit
@@ -13,21 +13,27 @@ from ..services.reports import daily_report, report_csv_rows, report_to_pdf_byte
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-@router.get("/daily")
-def get_daily_report(mission_id: int, db: Session = Depends(get_db), user: User = Depends(require("reports:use"))):
+def _mission_or_404(db, mission_id):
+    if not mission_id:
+        raise HTTPException(422, "A mission_id is required.")
     mission = db.get(Mission, mission_id)
     if not mission:
         raise HTTPException(404, "Mission not found.")
-    report = daily_report(db, mission_id)
+    return mission
+
+
+@router.get("/daily")
+def get_daily_report(mission_id: int = Query(None), db: Session = Depends(get_db), user: User = Depends(require("reports:use"))):
+    mission = _mission_or_404(db, mission_id)
+    report = daily_report(db, mission.id)
     audit(db, user, "generate_report", "mission", mission.mission_id)
     return report
 
 
 @router.get("/daily/csv")
-def export_daily_csv(mission_id: int, db: Session = Depends(get_db), user: User = Depends(require("reports:use"))):
-    report = daily_report(db, mission_id)
-    if not report:
-        raise HTTPException(404, "Mission not found.")
+def export_daily_csv(mission_id: int = Query(None), db: Session = Depends(get_db), user: User = Depends(require("reports:use"))):
+    mission = _mission_or_404(db, mission_id)
+    report = daily_report(db, mission.id)
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerows(report_csv_rows(report))
@@ -36,10 +42,9 @@ def export_daily_csv(mission_id: int, db: Session = Depends(get_db), user: User 
 
 
 @router.get("/daily/pdf", dependencies=[Depends(require("reports:use"))])
-def export_daily_pdf(mission_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    report = daily_report(db, mission_id)
-    if not report:
-        raise HTTPException(404, "Mission not found.")
+def export_daily_pdf(mission_id: int = Query(None), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    mission = _mission_or_404(db, mission_id)
+    report = daily_report(db, mission.id)
     bytes_ = report_to_pdf_bytes(report)
     audit(db, user, "export_pdf", "mission", report["mission"]["code"])
     return Response(content=bytes_, media_type="application/pdf",
