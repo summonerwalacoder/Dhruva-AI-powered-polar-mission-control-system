@@ -2,6 +2,7 @@
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,6 +71,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def clean_query_params(request, call_next):
+    """Strip empty / 'null' / 'undefined' query values (e.g. ?mission_id=)
+    so FastAPI doesn't 422 on them. Any backend endpoint is covered."""
+    raw = request.scope.get("query_string", b"")
+    if raw:
+        params = parse_qsl(raw.decode(), keep_blank_values=True)
+        kept = [(k, v) for k, v in params if v not in ("", "null", "undefined")]
+        if len(kept) != len(params):
+            request.scope["query_string"] = urlencode(kept).encode()
+    return await call_next(request)
 
 
 # ---------- Auth & admin --------------------------------------------------

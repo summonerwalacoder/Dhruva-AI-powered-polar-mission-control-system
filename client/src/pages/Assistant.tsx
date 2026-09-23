@@ -19,13 +19,11 @@ export default function Assistant() {
   const [err, setErr] = useState('')
   const [listen, setListen] = useState(false)
   const [speaking, setSpeaking] = useState(false)
-  const [quick, setQuick] = useState<{ id: string; label: string }[]>([])
   const [provider, setProvider] = useState('')
   const bodyRef = useRef<HTMLDivElement>(null)
   const recRef = useRef<ReturnType<typeof attachRecognizer> | null>(null)
 
   useEffect(() => {
-    api('/api/ai/quick-actions').then((r: any) => setQuick(r.actions)).catch(() => {})
     api('/api/ai/status').then((r: any) => setProvider(r.provider)).catch(() => {})
   }, [])
 
@@ -96,14 +94,7 @@ export default function Assistant() {
           {!thread.length ? (
             <div className="py-10 text-center text-sm text-slate-400">
               <div className="mb-3 text-3xl">❄</div>
-              Ask anything about the mission. Try:
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
-                {quick.map((q) => (
-                  <button key={q.id} onClick={() => send(q.label)} className="rounded-full bg-ink-800 px-3 py-1.5 text-xs text-slate-300 hover:bg-ink-700">
-                    {q.label}
-                  </button>
-                ))}
-              </div>
+              Ask anything about the mission. DHRUVA answers based on live data.
             </div>
           ) : (
             thread.map((m, i) => (
