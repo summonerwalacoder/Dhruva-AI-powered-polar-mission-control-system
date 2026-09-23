@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { getCachedUser } from '../lib/api'
+import { api, getCachedUser } from '../lib/api'
+import { getCachedValue } from '../lib/offline'
 import type { User, MissionSummary } from '../lib/types'
 import { can } from '../lib/perms'
 
@@ -39,6 +40,27 @@ export function MissionProvider({ children }: { children: React.ReactNode }) {
     const d = defaultMissionFor(user, missions)
     if (d) setSelectedId(d.id)
   }, [missions])
+
+  // Load the mission list centrally so the mission selector is available on
+  // every page immediately after login (not only Dashboard/Missions).
+  useEffect(() => {
+    if (!user) return
+    let on = true
+    const load = async () => {
+      try {
+        const ms = await api<MissionSummary[]>('/api/missions')
+        if (on && Array.isArray(ms)) setMissions(ms)
+      } catch {
+        const cached = await getCachedValue<MissionSummary[]>('/api/missions')
+        if (on && Array.isArray(cached)) setMissions(cached)
+      }
+    }
+    load()
+    return () => {
+      on = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const selected = missions.find((m) => m.id === selectedId) || null
 

@@ -4,7 +4,7 @@ import { downloadFile } from '../lib/api'
 import { Badge, Btn, Card, ErrorBox, Icon, Spinner, cx, statusTone, useApi } from '../components/ui'
 
 export default function Reports() {
-  const { selectedId, selected } = useMission()
+  const { selectedId, selected, missions, setSelected } = useMission()
   const { data, loading, error, reload } = useApi<any>(
     selectedId ? `/api/reports/daily?mission_id=${selectedId}` : null
   )
@@ -40,7 +40,26 @@ export default function Reports() {
       </div>
 
       {!selectedId ? (
-        <Card className="p-6 text-center text-sm text-slate-400">Select a mission to view its report.</Card>
+        <Card className="p-6 text-center text-sm text-slate-400">
+          <p className="mb-3">Select a mission to view its report.</p>
+          <div className="inline-flex items-center gap-2 text-slate-300">
+            <span className="text-[11px] uppercase tracking-wide text-slate-500">Mission</span>
+            <select
+              className="rounded-lg border border-ink-700 bg-ink-800 px-2.5 py-1.5 text-sm text-slate-100 outline-none focus:border-ice-500"
+              value=""
+              onChange={(e) => setSelected(Number(e.target.value))}
+            >
+              <option value="" disabled>
+                Pick a mission…
+              </option>
+              {missions.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.mission_id} · {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </Card>
       ) : null}
 
       {loading ? <Spinner label="Generating report…" /> : null}
