@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.seed import seed_all
+from app.seed import backfill_role_missions, seed_all
 from app.routers import (
     ai,
     alerts,
@@ -47,6 +47,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_all(db)
+        backfill_role_missions(db)
     finally:
         db.close()
     yield

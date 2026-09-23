@@ -41,6 +41,28 @@ ROLE_LABELS = {
 DEFAULT_PASSWORD = "Dhruva@2026"
 
 
+def backfill_role_missions(db):
+    """Give field-oriented demo users (scientist/medical/field) a mission when
+    they were seeded before missions existed, so the mission selector works.
+    Idempotent and only touches demo-domain accounts."""
+    from .models import User
+
+    users = (
+        db.query(User)
+        .filter(User.role.in_(["scientist", "medical", "field"]), User.mission_id.is_(None))
+        .all()
+    )
+    if not users:
+        return
+    first_mission = db.query(Mission).order_by(Mission.id).first()
+    if not first_mission:
+        return
+    for u in users:
+        if u.email and u.email.endswith("@dhruva.gov.in"):
+            u.mission_id = first_mission.id
+    db.commit()
+
+
 def seed_all(db):
     if db.query(User).count() > 0:
         return
@@ -124,6 +146,11 @@ def seed_all(db):
     )
     db.add_all([m1, m2, m3])
     db.flush()
+
+    # Field-oriented roles are tied to their base mission so the mission
+    # selector and scoped queries work for them.
+    for u, mission in ((scientist, m1), (medical, m1), (field, m1)):
+        u.mission_id = mission.id
 
     # ---- Personnel ---------------------------------------------------------------
     def mk_personnel(pid, name, role, team, mission, station, status="active", movement="station",
