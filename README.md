@@ -34,14 +34,16 @@ It combines local-first data storage, AI/RAG-based mission assistance, risk pred
                                │
                                ↓
                          HQ SYNCHRONIZATION
-**Key Principles**
+
+##Key Principles
 a.Offline-first: Core operations continue without continuous internet.
 b.AI-assisted: Converts mission data into predictions and recommendations.
 c.RAG-powered: Answers mission-specific questions using trusted documents such as SOPs and equipment manuals.
 d.Human-in-the-loop: Critical AI recommendations require human validation.
 e.Connected when available: Local changes synchronize with HQ when connectivity returns.
+
 2. Quick Start
-Prerequisites
+Prerequisites:
 Make sure the following are installed:
 Node.js 18+
 Python 3.11+
@@ -49,10 +51,12 @@ Git
 PostgreSQL
 Optional: Docker & Docker Compose
 API keys/configuration for the selected LLM and external services
-Clone Repository
+
+Clone Repository:
 git clone https://github.com/<your-username>/dhruva.git
 cd dhruva
-Frontend
+
+Frontend:
 cd frontend
 npm install
 npm run dev
@@ -60,7 +64,8 @@ npm run dev
 The frontend will be available at:
 
 http://localhost:5173
-Backend
+
+Backend:
 cd backend
 python -m venv venv
 Windows
@@ -108,12 +113,14 @@ Define objectives
 Plan routes
 Allocate resources
 Track mission progress
+
 2. Cargo & Logistics
 Cargo tracking
 Container management
 Shipment tracking
 QR-based identification
 Resupply planning
+
 3. Inventory & Assets
 Equipment inventory
 Food and fuel monitoring
@@ -121,24 +128,28 @@ Stock levels
 Asset condition
 Maintenance schedules
 Shortage prediction
+
 4. Personnel
 Team management
 Personnel locations
 Movement tracking
 Task assignments
 Role-based access
+
 5. Weather & Map
 Mission locations
 Cached maps
 Weather information
 Route visualization
 Environmental alerts
+
 6. Emergency Response
 Emergency reporting
 AI-assisted assessment
 Severity classification
 SOS workflow
 Offline communication fallback
+
 7. AI Mission Assistant
 
 Users can ask questions using:
@@ -166,6 +177,7 @@ CONFLICT CHECK
 SECURE SYNC
     ↓
 HQ DATABASE
+
 4. AI / NLP Pipeline
 
 DHRUVA's AI layer combines RAG, structured mission data and predictive intelligence.
@@ -307,6 +319,7 @@ dhruva/
 ├── .env.example
 ├── .gitignore
 └── README.md
+
 7. Ethical Guidelines
 
 DHRUVA is designed as an AI-assisted decision-support system, not an autonomous authority.
@@ -356,6 +369,7 @@ Bias
 Incorrect retrieval
 Unsafe recommendations
 Failure under incomplete data
+
 8. Security
 
 DHRUVA should implement:
@@ -369,6 +383,7 @@ API validation
 Secure secret management
 Offline data protection
 Sync conflict detection
+
 9. Development Methodology
 
 DHRUVA follows an iterative development approach:
@@ -403,6 +418,7 @@ AI/RAG evaluation
 Security testing
 Failure/recovery testing
 User acceptance testing
+
 10. License
 
 This project is released under the MIT License.
@@ -422,7 +438,8 @@ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 DHRUVA – One platform. One mission view. Intelligent decisions.
-# React + TypeScript + Vite
+
+### React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
