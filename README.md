@@ -1,14 +1,17 @@
-DHRUVA – AI-Powered Polar Mission Control System
-
-Integrated Polar Expedition Logistics & Asset Management System
-Smart India Hackathon 2026 | SIH26062
+# DHRUVA – AI-Powered Polar Mission Control
+### Integrated Polar Expedition Logistics & Asset Management System
+**Smart India Hackathon 2026 | SIH26062**
 
 DHRUVA is an offline-first AI-powered mission control platform designed to unify polar expedition planning, logistics, inventory, assets, personnel, weather, mapping and emergency response in a single operational system.
 
 It combines local-first data storage, AI/RAG-based mission assistance, risk prediction, what-if simulation and delayed synchronization to support operations in connectivity-constrained environments.
 
-1. System Overview
-Core Architecture
+---
+
+## 1. System Overview
+
+### Core Architecture
+```text
                          DHRUVA AI CORE
                     ┌─────────────────────┐
                     │ PREDICT             │
