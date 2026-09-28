@@ -1,4 +1,4 @@
-# DHRUVA – AI-Powered Polar Mission Control
+# DHRUVA – AI-Powered Polar Mission Control System
 ### Integrated Polar Expedition Logistics & Asset Management System
 **Smart India Hackathon 2026 | SIH26062**
 
@@ -34,17 +34,15 @@ It combines local-first data storage, AI/RAG-based mission assistance, risk pred
                                │
                                ↓
                          HQ SYNCHRONIZATION
-Key Principles
-Offline-first: Core operations continue without continuous internet.
-AI-assisted: Converts mission data into predictions and recommendations.
-RAG-powered: Answers mission-specific questions using trusted documents such as SOPs and equipment manuals.
-Human-in-the-loop: Critical AI recommendations require human validation.
-Connected when available: Local changes synchronize with HQ when connectivity returns.
+**Key Principles**
+a.Offline-first: Core operations continue without continuous internet.
+b.AI-assisted: Converts mission data into predictions and recommendations.
+c.RAG-powered: Answers mission-specific questions using trusted documents such as SOPs and equipment manuals.
+d.Human-in-the-loop: Critical AI recommendations require human validation.
+e.Connected when available: Local changes synchronize with HQ when connectivity returns.
 2. Quick Start
 Prerequisites
-
 Make sure the following are installed:
-
 Node.js 18+
 Python 3.11+
 Git
